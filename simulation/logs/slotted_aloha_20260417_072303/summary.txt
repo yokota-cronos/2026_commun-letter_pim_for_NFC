@@ -1,0 +1,2 @@
+nodes=5: {'collisions': 64, 'successes': 490, 'rounds': 100, 'nodes': 5}
+nodes=10: {'collisions': 237, 'successes': 974, 'rounds': 100, 'nodes': 10}
