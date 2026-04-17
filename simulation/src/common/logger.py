@@ -18,9 +18,9 @@ class EventLogger:
     def log_dir(self) -> str:
         return self._log_dir
 
-    def log(self, time_tu: int, round_num: int, phase: str, event: str,
+    def log(self, time_tu: float, round_num: int, phase: str, event: str,
             tag_id: str, detail: str, result: str):
-        line = f"{time_tu}\t{round_num}\t{phase}\t{event}\t{tag_id}\t{detail}\t{result}"
+        line = f"{time_tu:.6f}\t{round_num}\t{phase}\t{event}\t{tag_id}\t{detail}\t{result}"
         with open(self._events_path, "a") as f:
             f.write(line + "\n")
 

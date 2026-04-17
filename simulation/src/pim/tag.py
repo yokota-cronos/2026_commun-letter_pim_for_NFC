@@ -12,6 +12,7 @@ class PimTag:
         self.delimiter_bits = config["delimiter_bits"]
         self.backoff_max = config["backoff_max"]
         self.data_tu_mult = config["data_tu_mult"]
+        self.bits_per_tu = config["datarate"] * config["tu"]
 
         self.uid = random.getrandbits(self.id_bits)
         self.data = random.getrandbits(self.data_bits)
@@ -26,21 +27,25 @@ class PimTag:
         return self.delimiter_bits + self.id_bits
 
     @property
-    def data_wait_tu(self) -> int:
+    def packet_tu(self) -> float:
+        return self.packet_bits / self.bits_per_tu
+
+    @property
+    def data_wait_tu(self) -> float:
         return self.data * self.data_tu_mult
 
     @property
-    def preamble_start(self) -> int:
-        return self.backoff
+    def preamble_start(self) -> float:
+        return float(self.backoff)
 
     @property
-    def preamble_end(self) -> int:
-        return self.preamble_start + self.packet_bits
+    def preamble_end(self) -> float:
+        return self.preamble_start + self.packet_tu
 
     @property
-    def postamble_start(self) -> int:
+    def postamble_start(self) -> float:
         return self.preamble_end + self.data_wait_tu
 
     @property
-    def postamble_end(self) -> int:
-        return self.postamble_start + self.packet_bits
+    def postamble_end(self) -> float:
+        return self.postamble_start + self.packet_tu

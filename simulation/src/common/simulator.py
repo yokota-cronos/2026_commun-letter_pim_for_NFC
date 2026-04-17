@@ -9,6 +9,10 @@ def load_config(config_path: str) -> dict:
         return yaml.safe_load(f)
 
 
+def bits_to_tu(bits: float, datarate: float, tu: float) -> float:
+    return bits / (datarate * tu)
+
+
 class Simulator:
     def __init__(self, protocol: str, config: dict, config_path: str,
                  reader_factory, tag_factory, log_base_dir: str = "logs"):
@@ -20,7 +24,7 @@ class Simulator:
         self.logger.copy_config(config_path)
         self.reader_factory = reader_factory
         self.tag_factory = tag_factory
-        self.tu = 0
+        self.tu = 0.0
 
     def run_all(self):
         nodes_list = self.config["nodes"]
@@ -41,7 +45,7 @@ class Simulator:
 
         for round_num in range(1, num_rounds + 1):
             self.channel.clear()
-            self.tu = 0
+            self.tu = 0.0
             reader = self.reader_factory(self.config, self.channel, self.logger, round_num)
             tags = [self.tag_factory(i, self.config) for i in range(num_nodes)]
             round_stats = reader.run_round(tags)

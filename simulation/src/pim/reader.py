@@ -17,7 +17,7 @@ class PimReader:
         stats = {"collisions": 0, "successes": 0}
 
         # Send start signal
-        self.logger.log(0, self.round_num, "transmission", "start_signal",
+        self.logger.log(0.0, self.round_num, "transmission", "start_signal",
                         "-", "-", "-")
 
         # Pre-compute all tag transmission intervals
@@ -37,7 +37,9 @@ class PimReader:
             tag = ti["tag"]
             ps, pe = ti["preamble"]
             self.logger.log(ps, self.round_num, "transmission", "tx_preamble",
-                            tag.uid_hex, f"start={ps},end={pe},bits={tag.packet_bits}", "-")
+                            tag.uid_hex,
+                            f"start={ps:.6f},end={pe:.6f},packet_tu={tag.packet_tu:.6f}",
+                            "-")
 
         # Check preamble collisions: two preambles overlap if their intervals intersect
         preamble_collided = set()
@@ -58,7 +60,7 @@ class PimReader:
             ps, pe = ti["postamble"]
             self.logger.log(ps, self.round_num, "transmission", "tx_postamble",
                             tag.uid_hex,
-                            f"start={ps},end={pe},bits={tag.packet_bits},data={tag.data},wait={tag.data_wait_tu}",
+                            f"start={ps:.6f},end={pe:.6f},packet_tu={tag.packet_tu:.6f},data={tag.data},wait={tag.data_wait_tu:.6f}",
                             "-")
 
         for i, ti in enumerate(tag_intervals):

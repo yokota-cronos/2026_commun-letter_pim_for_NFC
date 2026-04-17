@@ -14,7 +14,11 @@ class SlottedAlohaReader:
         self.reader_cmd_bits = config["reader_cmd_bytes"] * 8
         self.tag_overhead_bits = config["tag_overhead_bytes"] * 8
         self.data_bits = config["data_bits"]
-        self.tu = 0
+        self.bits_per_tu = config["datarate"] * config["tu"]
+        self.tu = 0.0
+
+    def _bits_to_tu(self, bits: float) -> float:
+        return bits / self.bits_per_tu
 
     def run_round(self, tags: list[SlottedAlohaTag]) -> dict:
         stats = {"collisions": 0, "successes": 0}
@@ -46,8 +50,7 @@ class SlottedAlohaReader:
         self.logger.log(self.tu, self.round_num, "inventory", "inventory_cmd",
                         "-", f"mask_len={mask_length},mask={mask_hex},slots={self.num_slots}", "-")
 
-        cmd_duration = self.reader_cmd_bits
-        self.tu += cmd_duration
+        self.tu += self._bits_to_tu(self.reader_cmd_bits)
 
         # Determine which tags respond and their slot assignments
         responding_tags = [t for t in tags if not t.recognized and t.check_mask(mask_length, mask_value)]
@@ -72,7 +75,7 @@ class SlottedAlohaReader:
                 tag.recognized = True
                 recognized.append(tag)
                 stats["successes"] += 1
-                self.tu += response_duration
+                self.tu += self._bits_to_tu(response_duration)
             else:
                 tag_ids = ",".join(t.uid_hex for t in tags_in_slot)
                 self.logger.log(self.tu, self.round_num, "inventory", "collision",
@@ -80,12 +83,12 @@ class SlottedAlohaReader:
                 stats["collisions"] += 1
                 new_mask_value = (mask_value | (slot_num << mask_length))
                 collision_slots.append((slot_num, new_mask_value))
-                self.tu += self.eof_bits  # collision also takes some time
+                self.tu += self._bits_to_tu(self.eof_bits)  # collision also takes some time
 
             # EOF to advance to next slot
             self.logger.log(self.tu, self.round_num, "inventory", "eof",
                             "-", f"slot={slot_num}", "-")
-            self.tu += self.eof_bits
+            self.tu += self._bits_to_tu(self.eof_bits)
 
         # Recursively resolve collisions
         for _slot_num, new_mask_val in collision_slots:
@@ -99,10 +102,10 @@ class SlottedAlohaReader:
             # Reader sends addressed data request
             self.logger.log(self.tu, self.round_num, "data_collection", "data_request",
                             tag.uid_hex, f"cmd_bits={self.reader_cmd_bits}", "-")
-            self.tu += self.reader_cmd_bits
+            self.tu += self._bits_to_tu(self.reader_cmd_bits)
 
             # Tag responds with data
             response_bits = tag.data_bits + self.tag_overhead_bits
             self.logger.log(self.tu, self.round_num, "data_collection", "data_response",
                             tag.uid_hex, f"bits={response_bits},data={tag.data}", "success")
-            self.tu += response_bits
+            self.tu += self._bits_to_tu(response_bits)
