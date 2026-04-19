@@ -5,6 +5,15 @@ from .tag import PimTag
 
 class PimReader:
     def __init__(self, config: dict, channel: Channel, logger: EventLogger, round_num: int):
+        """
+        PIMリーダーの初期化
+        
+        Args:
+            config: リーダーの設定情報（data_bits、data_tu_mult、backoff_maxを含む）
+            channel: 通信チャネル
+            logger: イベントログ出力用のロガー
+            round_num: 現在のラウンド番号
+        """
         self.config = config
         self.channel = channel
         self.logger = logger
@@ -14,6 +23,22 @@ class PimReader:
         self.backoff_max = config["backoff_max"]
 
     def run_round(self, tags: list[PimTag]) -> dict:
+        """
+        1ラウンドの処理を実行
+        
+        PIMプロトコルに基づいて、各タグが送信したプリアンブルとポストアンブルの
+        衝突を検出し、統計を計算する。
+        衝突は以下を含む：
+        - プリアンブル間の衝突
+        - ポストアンブル間の衝突
+        - プリアンブルとポストアンブル間の交差衝突
+        
+        Args:
+            tags: 受信を期待するタグ一覧
+            
+        Returns:
+            衝突数と成功数を含む統計情報
+        """
         stats = {"collisions": 0, "successes": 0}
 
         # Send start signal

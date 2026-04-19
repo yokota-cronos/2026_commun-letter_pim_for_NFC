@@ -5,6 +5,15 @@ from .tag import SlottedAlohaTag
 
 class SlottedAlohaReader:
     def __init__(self, config: dict, channel: Channel, logger: EventLogger, round_num: int):
+        """
+        SlottedAlohaリーダの初期化
+        
+        Args:
+            config: リーダの設定情報（num_slots、datarate等を含む）
+            channel: 通信チャネル
+            logger: イベントログ出力用のロガー
+            round_num: 現在のラウンド番号
+        """
         self.config = config
         self.channel = channel
         self.logger = logger
@@ -18,9 +27,29 @@ class SlottedAlohaReader:
         self.tu = 0.0
 
     def _bits_to_tu(self, bits: float) -> float:
+        """
+        ビット数をTime Unit（TU）に変換
+        
+        Args:
+            bits: 変換するビット数
+            
+        Returns:
+            対応するTime Unit数
+        """
         return bits / self.bits_per_tu
 
     def run_round(self, tags: list[SlottedAlohaTag]) -> dict:
+        """
+        1ラウンドの処理を実行
+        
+        タグの在庫確認とデータ収集を順序立てて実行する
+        
+        Args:
+            tags: スロット内のタグ一覧
+            
+        Returns:
+            衝突数と成功数を含む統計情報
+        """
         stats = {"collisions": 0, "successes": 0}
 
         # Phase 1: Inventory
@@ -33,6 +62,21 @@ class SlottedAlohaReader:
 
     def _inventory(self, tags: list[SlottedAlohaTag], mask_length: int, mask_value: int,
                    stats: dict) -> list[SlottedAlohaTag]:
+        """
+        タグの在庫確認処理（タグの識別と認識）
+        
+        Slotted Alohaプロトコルに従い、マスク値に一致するタグを段階的に識別する。
+        衝突が発生した場合は再帰的に解決する。
+        
+        Args:
+            tags: 在庫確認対象のタグ一覧
+            mask_length: 現在のマスク長
+            mask_value: 現在のマスク値
+            stats: 統計情報を格納する辞書
+            
+        Returns:
+            新たに認識されたタグの一覧
+        """
         recognized = []
         id_bits = self.config["id_bits"]
 
@@ -98,6 +142,16 @@ class SlottedAlohaReader:
         return recognized
 
     def _data_collection(self, recognized_tags: list[SlottedAlohaTag], stats: dict):
+        """
+        データ収集処理
+        
+        認識済みの各タグに対して、アドレス指定でデータリクエストを送信し、
+        タグからのデータレスポンスを受信する。
+        
+        Args:
+            recognized_tags: データを収集するタグ一覧
+            stats: 統計情報を格納する辞書
+        """
         for tag in recognized_tags:
             # Reader sends addressed data request
             self.logger.log(self.tu, self.round_num, "data_collection", "data_request",
