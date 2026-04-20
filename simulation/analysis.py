@@ -17,7 +17,6 @@ SLOTTED_ALOHA_LOG_DIR = Path("logs/slotted_aloha_20260419_225913")
 OUTPUT_DIR = Path("img/analysis")
 COLLISION_RATE_PDF = OUTPUT_DIR / "collision_rate_comparison2.pdf"
 THROUGHPUT_BPS_PDF = OUTPUT_DIR / "throughput_bps_comparison2.pdf"
-WAVEFORM_THROUGHPUT_BPS_PDF = OUTPUT_DIR / "waveform_throughput_bps_comparison2.pdf"
 
 
 def load_config(config_path: Path) -> dict:
@@ -79,149 +78,31 @@ def parse_detail_fields(detail: str) -> dict:
     return out
 
 
-def extract_waveform_time_pim(block: pd.DataFrame) -> float:
+def extract_slotted_aloha_first_inventory(block: pd.DataFrame) -> pd.DataFrame:
     """
-    PIM ブロック内の全タグ送信波形時間(成功+失敗)の合計を計算する。
+    Slotted Aloha ブロックから、mask_len=0 の最初の inventory だけを切り出す。
 
-    各タグについて、利用可能な送信イベントから以下を優先して時間を計算する。
-    1) preamble_start から postamble_end
-    2) preamble 区間のみ
-    3) postamble 区間のみ
-
-    これにより、衝突で途中終了した送信も分母へ含める。
+    返す範囲は最初の inventory_cmd から、次の inventory_cmd の直前まで。
+    inventory_cmd が1回しかない場合は、その inventory 全体を返す。
     """
-    total_wave_tu = 0.0
+    inventory_cmds = block[(block["phase"] == "inventory") & (block["event"] == "inventory_cmd")]
+    first_cmd = inventory_cmds[inventory_cmds["detail"].astype(str).str.contains("mask_len=0", na=False)]
 
-    tx_pairs = (
-        block[
-            (block["event"].isin(["rx_success", "collision", "tx_preamble", "tx_postamble"]))
-            & (block["tag_id"] != "-")
-        ][["round", "tag_id"]]
-        .drop_duplicates()
-        .itertuples(index=False)
-    )
+    if first_cmd.empty:
+        return block.iloc[0:0]
 
-    for round_num, tag_id in tx_pairs:
-        tx_events = block[(block["round"] == round_num) & (block["tag_id"] == tag_id)]
+    start_time = float(first_cmd.iloc[0]["time_tu"])
+    next_cmds = inventory_cmds[inventory_cmds["time_tu"] > start_time]
+    if next_cmds.empty:
+        end_time = None
+    else:
+        end_time = float(next_cmds["time_tu"].min())
 
-        preamble_start = None
-        preamble_end = None
-        for detail in tx_events[tx_events["event"] == "tx_preamble"]["detail"]:
-            fields = parse_detail_fields(detail)
-            if "start" in fields:
-                value = float(fields["start"])
-                preamble_start = value if preamble_start is None else min(preamble_start, value)
-            if "end" in fields:
-                value = float(fields["end"])
-                preamble_end = value if preamble_end is None else max(preamble_end, value)
+    inventory = block[(block["phase"] == "inventory") & (block["time_tu"] >= start_time)]
+    if end_time is not None:
+        inventory = inventory[inventory["time_tu"] < end_time]
 
-        postamble_start = None
-        postamble_end = None
-        for detail in tx_events[tx_events["event"] == "tx_postamble"]["detail"]:
-            fields = parse_detail_fields(detail)
-            if "start" in fields:
-                value = float(fields["start"])
-                postamble_start = value if postamble_start is None else min(postamble_start, value)
-            if "end" in fields:
-                value = float(fields["end"])
-                postamble_end = value if postamble_end is None else max(postamble_end, value)
-
-        wave_tu = 0.0
-        if preamble_start is not None and postamble_end is not None:
-            wave_tu = postamble_end - preamble_start
-        elif preamble_start is not None and preamble_end is not None:
-            wave_tu = preamble_end - preamble_start
-        elif postamble_start is not None and postamble_end is not None:
-            wave_tu = postamble_end - postamble_start
-
-        if wave_tu > 0:
-            total_wave_tu += wave_tu
-
-    return total_wave_tu
-
-
-def extract_waveform_time_slotted_aloha(block: pd.DataFrame) -> float:
-    """
-    Slotted Aloha ブロック内の全タグ送信波形時間(成功+失敗)の合計を計算する。
-
-    各タグ送信について、以下を合算する。
-    - inventory: tag_response から同一slotの eof まで
-    - inventory(collision): collision から同一slotの eof まで (count倍)
-    - data_collection: data_response から次の data_request まで
-    """
-    total_wave_tu = 0.0
-
-    for _, round_events in block.groupby("round"):
-        round_events = round_events.sort_values(["time_tu"], kind="stable")
-
-        inv = round_events[round_events["phase"] == "inventory"]
-        inv_success = inv[(inv["event"] == "tag_response") & (inv["result"] == "success")]
-        inv_eof = inv[inv["event"] == "eof"]
-
-        for _, row in inv_success.iterrows():
-            resp_time = float(row["time_tu"])
-            fields = parse_detail_fields(row["detail"])
-            slot = fields.get("slot")
-            if slot is None:
-                continue
-
-            matched_eof = []
-            for _, eof_row in inv_eof.iterrows():
-                eof_fields = parse_detail_fields(eof_row["detail"])
-                if eof_fields.get("slot") == slot and float(eof_row["time_tu"]) >= resp_time:
-                    matched_eof.append(float(eof_row["time_tu"]))
-
-            if not matched_eof:
-                continue
-
-            wave_tu = min(matched_eof) - resp_time
-            if wave_tu > 0:
-                total_wave_tu += wave_tu
-
-        inv_collision = inv[inv["event"] == "collision"]
-        for _, row in inv_collision.iterrows():
-            col_time = float(row["time_tu"])
-            fields = parse_detail_fields(row["detail"])
-            slot = fields.get("slot")
-            if slot is None:
-                continue
-
-            try:
-                count = int(float(fields.get("count", "1")))
-            except ValueError:
-                count = 1
-
-            matched_eof = []
-            for _, eof_row in inv_eof.iterrows():
-                eof_fields = parse_detail_fields(eof_row["detail"])
-                if eof_fields.get("slot") == slot and float(eof_row["time_tu"]) >= col_time:
-                    matched_eof.append(float(eof_row["time_tu"]))
-
-            if not matched_eof:
-                continue
-
-            wave_tu = min(matched_eof) - col_time
-            if wave_tu > 0:
-                total_wave_tu += wave_tu * count
-
-        data = round_events[round_events["phase"] == "data_collection"]
-        data_response = data[data["event"] == "data_response"]
-        data_request_times = list(data[data["event"] == "data_request"]["time_tu"].astype(float))
-
-        for _, row in data_response.iterrows():
-            resp_time = float(row["time_tu"])
-            next_requests = [t for t in data_request_times if t > resp_time]
-
-            if next_requests:
-                wave_tu = min(next_requests) - resp_time
-            else:
-                fields = parse_detail_fields(row["detail"])
-                wave_tu = float(fields.get("bits", 0.0))
-
-            if wave_tu > 0:
-                total_wave_tu += wave_tu
-
-    return total_wave_tu
+    return inventory
 
 
 def summarize_protocol(protocol: str, log_dir: Path) -> pd.DataFrame:
@@ -230,11 +111,6 @@ def summarize_protocol(protocol: str, log_dir: Path) -> pd.DataFrame:
 
     衝突率: collisions*衝突パケット数 / (collisions*衝突パケット数 + successes)
     スループット(bps): (successes * data_bits) / 総実行時間[sec]
-    
-    追加指標として、送信波形時間ベースのスループットも算出する。
-    ここで送信波形時間は成功・失敗の両方を含む。
-    - PIM: preamble_start ～ postamble_end
-    - Slotted Aloha: inventory応答時間 + data応答時間
     """
     config = load_config(log_dir / "config.yaml")
     events = load_events(log_dir / "events.tsv")
@@ -252,9 +128,18 @@ def summarize_protocol(protocol: str, log_dir: Path) -> pd.DataFrame:
 
         success_mask = success_event_mask(protocol, block)
         successes = int(success_mask.sum())
-        collisions = int((block["event"] == "collision").sum())
+        if protocol == "slotted_aloha":
+            collision_block = extract_slotted_aloha_first_inventory(block)
+            collision_successes = int(
+                ((collision_block["event"] == "tag_response") & (collision_block["result"] == "success")).sum()
+            )
+        else:
+            collision_block = block
+            collision_successes = successes
+
+        collisions = int((collision_block["event"] == "collision").sum())
         # 複数ノードが同時に衝突した場合は、パケットが完全に失われるため、衝突数倍して計算する
-        collision_rows = block[block["event"] == "collision"]
+        collision_rows = collision_block[collision_block["event"] == "collision"]
         collision_packets = 0
         for detail in collision_rows["detail"]:
             fields = parse_detail_fields(detail)
@@ -263,23 +148,13 @@ def summarize_protocol(protocol: str, log_dir: Path) -> pd.DataFrame:
             except ValueError:
                 collision_packets += 1
 
-        attempts = successes + collision_packets
+        attempts = collision_successes + collision_packets
         collision_rate = (collision_packets / attempts) if attempts > 0 else 0.0
 
-        # ラウンドごとの最終時刻を足して、そのブロックの総実行時間(TU)を得る
+        # nodes条件ごとのブロック内で、全roundの最終時刻を合計して総実行時間(TU)を得る
         total_tu = float(block.groupby("round")["time_tu"].max().sum())
         total_sec = total_tu * tu_sec
         throughput_bps = (successes * data_bits / total_sec) if total_sec > 0 else 0.0
-
-        if protocol == "pim":
-            waveform_tu = extract_waveform_time_pim(block)
-        elif protocol == "slotted_aloha":
-            waveform_tu = extract_waveform_time_slotted_aloha(block)
-        else:
-            waveform_tu = 0.0
-
-        waveform_sec = waveform_tu * tu_sec
-        waveform_throughput_bps = (successes * data_bits / waveform_sec) if waveform_sec > 0 else 0.0
 
         row = {
             "protocol": protocol,
@@ -288,8 +163,6 @@ def summarize_protocol(protocol: str, log_dir: Path) -> pd.DataFrame:
             "successes": successes,
             "collision_rate": collision_rate,
             "throughput_bps": throughput_bps,
-            "waveform_time_sec": waveform_sec,
-            "waveform_throughput_bps": waveform_throughput_bps,
         }
 
         rows.append(row)
@@ -338,26 +211,6 @@ def plot_throughput_bps(df: pd.DataFrame, output_pdf: Path) -> None:
     plt.close(fig)
 
 
-def plot_waveform_throughput_bps(df: pd.DataFrame, output_pdf: Path) -> None:
-    """nodesに対する波形時間ベースのスループット(bps)を比較し、PDFに出力する。"""
-    pivot = df.pivot(index="nodes", columns="protocol", values="waveform_throughput_bps").sort_index()
-
-    fig, ax = plt.subplots(figsize=(8, 5))
-    for protocol in pivot.columns:
-        ax.plot(pivot.index, pivot[protocol], marker="o", label=protocol)
-
-    ax.set_title("Waveform Throughput (bps) vs Selected Tags")
-    ax.set_xlabel("Selected Tags (nodes)")
-    ax.set_ylabel("Waveform Throughput (bps)")
-    ax.grid(alpha=0.3)
-    ax.legend()
-
-    output_pdf.parent.mkdir(parents=True, exist_ok=True)
-    with PdfPages(output_pdf) as pdf:
-        pdf.savefig(fig, bbox_inches="tight")
-    plt.close(fig)
-
-
 def main() -> None:
     """PIMとSlotted Alohaを比較解析し、各指標のPDFを出力する。"""
     pim_df = summarize_protocol("pim", PIM_LOG_DIR)
@@ -365,28 +218,17 @@ def main() -> None:
     merged = pd.concat([pim_df, slotted_df], ignore_index=True)
 
     plot_collision_rate(merged, COLLISION_RATE_PDF)
-    # plot_throughput_bps(merged, THROUGHPUT_BPS_PDF)
-    plot_waveform_throughput_bps(merged, WAVEFORM_THROUGHPUT_BPS_PDF)
+    plot_throughput_bps(merged, THROUGHPUT_BPS_PDF)
 
     print("比較解析が完了しました。")
     print(f"PIM log dir: {PIM_LOG_DIR}")
     print(f"Slotted Aloha log dir: {SLOTTED_ALOHA_LOG_DIR}")
     print(f"Collision rate PDF: {COLLISION_RATE_PDF}")
     print(f"Throughput PDF: {THROUGHPUT_BPS_PDF}")
-    print(f"Waveform throughput PDF: {WAVEFORM_THROUGHPUT_BPS_PDF}")
     print()
     print("=== 解析結果 ===")
     print(
-        merged[
-            [
-                "protocol",
-                "nodes",
-                "collision_rate",
-                "throughput_bps",
-                "waveform_time_sec",
-                "waveform_throughput_bps",
-            ]
-        ].to_string(index=False)
+        merged[["protocol", "nodes", "collision_rate", "throughput_bps"]].to_string(index=False)
     )
 
 
