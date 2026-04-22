@@ -1,9 +1,0 @@
-datarate: 424000        # データレート [Hz]
-nodes: [5, 10]          # ノード数リスト
-data_bits: 8            # データビット数
-id_bits: 8              # ID長
-num_slots: 16           # スロット数
-num_rounds: 100         # ラウンド数
-eof_bits: 8             # EOF長 [bit]
-reader_cmd_bytes: 13    # リーダーコマンド長 [byte]
-tag_overhead_bytes: 3   # タグ応答オーバーヘッド [byte] (フラグ+CRC)

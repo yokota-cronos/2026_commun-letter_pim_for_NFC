@@ -1,6 +1,0 @@
-nodes=5: {'collisions': 81, 'successes': 482, 'rounds': 100, 'nodes': 5, 'max_tags': 100}
-nodes=10: {'collisions': 261, 'successes': 962, 'rounds': 100, 'nodes': 10, 'max_tags': 100}
-nodes=15: {'collisions': 488, 'successes': 1426, 'rounds': 100, 'nodes': 15, 'max_tags': 100}
-nodes=20: {'collisions': 807, 'successes': 1856, 'rounds': 100, 'nodes': 20, 'max_tags': 100}
-nodes=25: {'collisions': 1061, 'successes': 2289, 'rounds': 100, 'nodes': 25, 'max_tags': 100}
-nodes=30: {'collisions': 1386, 'successes': 2685, 'rounds': 100, 'nodes': 30, 'max_tags': 100}

@@ -23,7 +23,8 @@ class PimTag:
 
         self.uid = random.getrandbits(self.id_bits)
         self.data = random.getrandbits(self.data_bits)
-        self.backoff = random.randint(0, self.backoff_max - 1)
+        self.backoff = random.randint(0, self.backoff_max - 1) * self.packet_tu
+        # self.backoff = random.randint(0, self.backoff_max - 1)
 
     @property
     def uid_hex(self) -> str:

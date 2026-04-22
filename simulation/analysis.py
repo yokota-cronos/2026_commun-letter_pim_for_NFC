@@ -8,15 +8,15 @@ import yaml
 
 
 # ログパスはここで固定指定する
-PIM_LOG_DIR = Path("logs/pim_20260419_225828")
-SLOTTED_ALOHA_LOG_DIR = Path("logs/slotted_aloha_20260419_225913")
-# PIM_LOG_DIR = Path("logs/pim_20260420_011748")
-# SLOTTED_ALOHA_LOG_DIR = Path("logs/slotted_aloha_20260420_011724")
+# PIM_LOG_DIR = Path("logs/pim_20260422_103816")
+# SLOTTED_ALOHA_LOG_DIR = Path("logs/slotted_aloha_20260422_103822")
+PIM_LOG_DIR = Path("logs/pim_20260422_105839")
+SLOTTED_ALOHA_LOG_DIR = Path("logs/slotted_aloha_20260422_105844")
 
 # PDF出力先
 OUTPUT_DIR = Path("img/analysis")
-COLLISION_RATE_PDF = OUTPUT_DIR / "collision_rate_comparison2.pdf"
-THROUGHPUT_BPS_PDF = OUTPUT_DIR / "throughput_bps_comparison2.pdf"
+COLLISION_RATE_PDF = OUTPUT_DIR / "collision_rate_comparison4.pdf"
+THROUGHPUT_BPS_PDF = OUTPUT_DIR / "throughput_bps_comparison4.pdf"
 
 
 def load_config(config_path: Path) -> dict:
@@ -154,6 +154,7 @@ def summarize_protocol(protocol: str, log_dir: Path) -> pd.DataFrame:
         # nodes条件ごとのブロック内で、全roundの最終時刻を合計して総実行時間(TU)を得る
         total_tu = float(block.groupby("round")["time_tu"].max().sum())
         total_sec = total_tu * tu_sec
+        print(f"total_sec: {total_sec}s (total_tu: {total_tu} TU)")
         throughput_bps = (successes * data_bits / total_sec) if total_sec > 0 else 0.0
 
         row = {
