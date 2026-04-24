@@ -10,5 +10,8 @@
 .DS_Store
 *.sw[po]
 TAGS
+__pycache__/
 
 ./venv
+logs/
+img/

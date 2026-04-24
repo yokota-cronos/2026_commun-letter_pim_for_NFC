@@ -1,2 +1,0 @@
-nodes=5: {'collisions': 2, 'successes': 498, 'rounds': 100, 'nodes': 5, 'max_tags': 100}
-nodes=10: {'collisions': 16, 'successes': 984, 'rounds': 100, 'nodes': 10, 'max_tags': 100}
