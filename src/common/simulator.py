@@ -69,6 +69,7 @@ class Simulator:
         summary_lines = []
 
         for num_nodes in nodes_list:
+            self.logger.set_logfile('events_%d.tsv' % (num_nodes))
             print(f"[{self.protocol}] max_tags={self.max_tags}, selected_nodes={num_nodes}, rounds={num_rounds}")
             stats = self.run(num_nodes, num_rounds)
             summary_lines.append(f"nodes={num_nodes}: {stats}")

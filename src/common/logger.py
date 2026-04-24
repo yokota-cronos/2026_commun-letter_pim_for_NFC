@@ -10,13 +10,16 @@ class EventLogger:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         self._log_dir = os.path.join(log_base_dir, f"{protocol}_{timestamp}")
         os.makedirs(self._log_dir, exist_ok=True)
-        self._events_path = os.path.join(self._log_dir, "events.tsv")
-        with open(self._events_path, "w") as f:
-            f.write(self.HEADER + "\n")
+        self._events_path = None
 
     @property
     def log_dir(self) -> str:
         return self._log_dir
+
+    def set_logfile(self, fname):
+        self._events_path = os.path.join(self._log_dir, fname)
+        with open(self._events_path, "w") as f:
+            f.write(self.HEADER + "\n")
 
     def log(self, time_tu: float, round_num: int, phase: str, event: str,
             tag_id: str, detail: str, result: str):
