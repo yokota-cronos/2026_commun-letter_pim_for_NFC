@@ -8,15 +8,15 @@ import yaml
 
 
 # ログパスはここで固定指定する
-# PIM_LOG_DIR = Path("logs/pim_20260422_103816")
-# SLOTTED_ALOHA_LOG_DIR = Path("logs/slotted_aloha_20260422_103822")
-PIM_LOG_DIR = Path("logs/pim_20260422_105839")
-SLOTTED_ALOHA_LOG_DIR = Path("logs/slotted_aloha_20260422_105844")
+# PIM_LOG_DIR = Path("logs/pim_20260422_170104")
+# PIM_LOG_DIR = Path("logs/pim_20260422_171636")
+PIM_LOG_DIR = Path("logs/pim_20260423_134856")
+SLOTTED_ALOHA_LOG_DIR = Path("logs/slotted_aloha_20260422_170019")
 
 # PDF出力先
 OUTPUT_DIR = Path("img/analysis")
-COLLISION_RATE_PDF = OUTPUT_DIR / "collision_rate_comparison4.pdf"
-THROUGHPUT_BPS_PDF = OUTPUT_DIR / "throughput_bps_comparison4.pdf"
+COLLISION_RATE_PDF = OUTPUT_DIR / "collision_rate_comparison5.pdf"
+THROUGHPUT_BPS_PDF = OUTPUT_DIR / "throughput_bps_comparison5.pdf"
 
 
 def load_config(config_path: Path) -> dict:
@@ -151,11 +151,18 @@ def summarize_protocol(protocol: str, log_dir: Path) -> pd.DataFrame:
         attempts = collision_successes + collision_packets
         collision_rate = (collision_packets / attempts) if attempts > 0 else 0.0
 
-        # nodes条件ごとのブロック内で、全roundの最終時刻を合計して総実行時間(TU)を得る
-        total_tu = float(block.groupby("round")["time_tu"].max().sum())
-        total_sec = total_tu * tu_sec
-        print(f"total_sec: {total_sec}s (total_tu: {total_tu} TU)")
-        throughput_bps = (successes * data_bits / total_sec) if total_sec > 0 else 0.0
+        # 1ラウンド平均の最終時刻(TU)を使って平均実行時間を計算する
+        round_last_tu = block.groupby("round")["time_tu"].max()
+        num_rounds = int(round_last_tu.shape[0])
+        avg_round_tu = float(round_last_tu.mean()) if num_rounds > 0 else 0.0
+        avg_round_sec = avg_round_tu * tu_sec
+        avg_successes_per_round = (successes / num_rounds) if num_rounds > 0 else 0.0
+        print(f"avg_round_sec: {avg_round_sec}s (avg_round_tu: {avg_round_tu} TU)")
+        throughput_bps = (
+            (avg_successes_per_round * data_bits / avg_round_sec)
+            if avg_round_sec > 0
+            else 0.0
+        )
 
         row = {
             "protocol": protocol,
