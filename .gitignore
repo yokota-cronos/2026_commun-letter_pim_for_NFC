@@ -11,6 +11,7 @@
 *.sw[po]
 TAGS
 __pycache__/
+config.yaml
 
 ./venv
 logs/

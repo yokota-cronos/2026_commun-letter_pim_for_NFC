@@ -12,8 +12,8 @@ def reader_factory(config, channel, logger, round_num):
     return SlottedAlohaReader(config, channel, logger, round_num)
 
 
-def tag_factory(index, config):
-    return SlottedAlohaTag(index, config)
+def tag_factory(index, config, rng=None):
+    return SlottedAlohaTag(index, config, rng)
 
 
 def main():

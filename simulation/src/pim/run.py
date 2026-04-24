@@ -1,5 +1,6 @@
 import os
 import sys
+from numpy.random import default_rng
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
@@ -12,8 +13,8 @@ def reader_factory(config, channel, logger, round_num):
     return PimReader(config, channel, logger, round_num)
 
 
-def tag_factory(index, config):
-    return PimTag(index, config)
+def tag_factory(index, config, rng=None):
+    return PimTag(index, config, rng)
 
 
 def main():

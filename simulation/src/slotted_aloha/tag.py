@@ -1,8 +1,9 @@
-import random
+import numpy as np
+from numpy.random import default_rng
 
 
 class SlottedAlohaTag:
-    def __init__(self, index: int, config: dict):
+    def __init__(self, index: int, config: dict, rng: np.random.Generator):
         """
         SlottedAlohaタグの初期化
         
@@ -13,8 +14,10 @@ class SlottedAlohaTag:
         self.index = index
         self.id_bits = config["id_bits"]
         self.data_bits = config["data_bits"]
-        self.uid = random.getrandbits(self.id_bits)
-        self.data = random.getrandbits(self.data_bits)
+        self.rng = rng
+
+        self.uid = rng.integers(2**self.id_bits)
+        self.data = rng.integers(2**self.data_bits)
         self.recognized = False
 
     @property

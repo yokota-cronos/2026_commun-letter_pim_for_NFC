@@ -1,4 +1,4 @@
-import random
+from numpy.random import default_rng
 import yaml
 
 from .channel import Channel
@@ -55,6 +55,7 @@ class Simulator:
         self.tag_factory = tag_factory
         self.max_tags = config["max_tags"]
         self.tu = 0.0
+        self.rng = default_rng(config["random_seed"])
 
     def run_all(self):
         """
@@ -101,8 +102,8 @@ class Simulator:
             self.channel.clear()
             self.tu = 0.0
             reader = self.reader_factory(self.config, self.channel, self.logger, round_num)
-            tag_pool = [self.tag_factory(i, self.config) for i in range(self.max_tags)]
-            selected_tags = random.sample(tag_pool, num_nodes)
+            tag_pool = [self.tag_factory(i, self.config, self.rng) for i in range(self.max_tags)]
+            selected_tags = self.rng.choice(tag_pool, num_nodes, replace=False)
             round_stats = reader.run_round(selected_tags)
             total_collisions += round_stats.get("collisions", 0)
             total_successes += round_stats.get("successes", 0)

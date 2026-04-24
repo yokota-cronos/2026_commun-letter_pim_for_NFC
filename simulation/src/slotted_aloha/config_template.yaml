@@ -1,4 +1,4 @@
-datarate: 26480        # データレート [Hz] 26.48kbpsにする
+datarate: 26480        # データレート [Hz]
 tu: 0.3776435045e-04     # タイムユニット [s] (デフォルト: 1/datarate)
 max_tags: 100            # 生成する総タグ数
 nodes: [5, 10]          # 総タグ数からランダム選択するタグ数リスト
@@ -9,3 +9,4 @@ num_rounds: 100         # ラウンド数
 eof_bits: 8             # EOF長 [bit]
 reader_cmd_bytes: 13    # リーダーコマンド長 [byte]
 tag_overhead_bytes: 3   # タグ応答オーバーヘッド [byte] (フラグ+CRC)
+random_seed: 42         # 乱数シード

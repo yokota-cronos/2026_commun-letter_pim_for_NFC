@@ -1,11 +1,12 @@
-import random
+import numpy as np
+from numpy.random import default_rng
 
 
 class PimTag:
     DELIMITER_PREAMBLE = 0xAA
     DELIMITER_POSTAMBLE = 0x55
 
-    def __init__(self, index: int, config: dict):
+    def __init__(self, index: int, config: dict, rng: np.random.Generator):
         """
         PIMタグの初期化
         
@@ -20,11 +21,11 @@ class PimTag:
         self.backoff_max = config["backoff_max"]
         self.data_tu_mult = config["data_tu_mult"]
         self.bits_per_tu = config["datarate"] * config["tu"]
+        self.rng = rng
 
-        self.uid = random.getrandbits(self.id_bits)
-        self.data = random.getrandbits(self.data_bits)
-        # self.backoff = random.randint(0, self.backoff_max - 1) * self.packet_tu
-        self.backoff = random.randint(0, self.backoff_max)
+        self.uid = rng.integers(2**self.id_bits)
+        self.data = rng.integers(2**self.data_bits)
+        self.backoff = rng.integers(self.backoff_max)
 
     @property
     def uid_hex(self) -> str:

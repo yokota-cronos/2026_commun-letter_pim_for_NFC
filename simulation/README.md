@@ -6,26 +6,27 @@ NFC環境における複数タグの通信をシミュレーションし、衝�
 
 ```
 src/
-├── common/              # 共通モジュール
-│   ├── simulator.py     # シミュレーター本体（時間管理・ラウンド実行）
-│   ├── channel.py       # 通信チャネル（パケット管理・衝突検出）
-│   └── logger.py        # イベントログ出力（TSV形式）
-├── slotted_aloha/       # Slotted ALOHAプロトコル
-│   ├── config.yaml      # 設定ファイル
-│   ├── reader.py        # リーダー（インベントリ・データ収集）
-│   ├── tag.py           # タグ（マスク判定・スロット選択）
-│   └── run.py           # 実行エントリポイント
-└── pim/                 # PIM (Packet Interval Modulation) プロトコル
-    ├── config.yaml      # 設定ファイル
-    ├── reader.py        # リーダー（衝突検出・データ復号）
-    ├── tag.py           # タグ（バックオフ・プリ/ポストアンブル生成）
-    └── run.py           # 実行エントリポイント
+├── common/                  # 共通モジュール
+│   ├── simulator.py         # シミュレーター本体（時間管理・ラウンド実行）
+│   ├── channel.py           # 通信チャネル（パケット管理・衝突検出）
+│   └── logger.py            # イベントログ出力（TSV形式）
+├── slotted_aloha/           # Slotted ALOHAプロトコル
+│   ├── config_template.yaml # 設定ファイルのテンプレート
+│   ├── reader.py            # リーダー（インベントリ・データ収集）
+│   ├── tag.py               # タグ（マスク判定・スロット選択）
+│   └── run.py               # 実行エントリポイント
+└── pim/                     # PIM (Packet Interval Modulation) プロトコル
+    ├── config_template.yaml # 設定ファイルのテンプレート
+    ├── reader.py            # リーダー（衝突検出・データ復号）
+    ├── tag.py               # タグ（バックオフ・プリ/ポストアンブル生成）
+    └── run.py               # 実行エントリポイント
 ```
 
 ## 必要環境
 
 - Python 3.9+
 - PyYAML
+- NumPy
 
 ## 実行方法
 
@@ -39,7 +40,7 @@ python -m src.pim.run
 
 ## 設定パラメータ
 
-各プロトコルの `config.yaml` で設定する。
+各プロトコルの `config_template.yaml` をコピーした `config.yaml` で設定する。
 
 ### 共通パラメータ
 
