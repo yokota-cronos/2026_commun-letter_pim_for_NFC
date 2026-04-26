@@ -80,6 +80,8 @@ class PimReader:
 
         # Log postamble events and check postamble collisions
         postamble_collided = set()
+        preamble_cross_collided = set()
+        postamble_cross_collided = set()
         for i, ti in enumerate(tag_intervals):
             tag = ti["tag"]
             ps, pe = ti["postamble"]
@@ -107,12 +109,16 @@ class PimReader:
                 s1, e1 = ti["preamble"]
                 s2, e2 = tj["postamble"]
                 if s1 < e2 and s2 < e1:
+                    preamble_cross_collided.add(i)
+                    postamble_cross_collided.add(j)
                     preamble_collided.add(i)
                     postamble_collided.add(j)
                 # ti's postamble vs tj's preamble
                 s1, e1 = ti["postamble"]
                 s2, e2 = tj["preamble"]
                 if s1 < e2 and s2 < e1:
+                    postamble_cross_collided.add(i)
+                    preamble_cross_collided.add(j)
                     postamble_collided.add(i)
                     preamble_collided.add(j)
 
@@ -126,9 +132,9 @@ class PimReader:
             if collided:
                 detail_parts = []
                 if pre_col:
-                    detail_parts.append("preamble_collision")
+                    detail_parts.append("preamble_cross_collision" if i in preamble_cross_collided else "preamble_collision")
                 if post_col:
-                    detail_parts.append("postamble_collision")
+                    detail_parts.append("postamble_cross_collision" if i in postamble_cross_collided else "postamble_collision")
                 self.logger.log(ti["postamble"][1], self.round_num, "transmission", "collision",
                                 tag.uid_hex, ",".join(detail_parts), "collision")
                 stats["collisions"] += 1
