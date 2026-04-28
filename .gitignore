@@ -16,3 +16,4 @@ config.yaml
 ./venv
 logs/
 img/
+tsv/
