@@ -111,30 +111,33 @@ class PimReader:
                 if s1 < e2 and s2 < e1:
                     preamble_cross_collided.add(i)
                     postamble_cross_collided.add(j)
-                    preamble_collided.add(i)
-                    postamble_collided.add(j)
                 # ti's postamble vs tj's preamble
                 s1, e1 = ti["postamble"]
                 s2, e2 = tj["preamble"]
                 if s1 < e2 and s2 < e1:
                     postamble_cross_collided.add(i)
                     preamble_cross_collided.add(j)
-                    postamble_collided.add(i)
-                    preamble_collided.add(j)
 
         # Determine success/collision per tag
         for i, ti in enumerate(tag_intervals):
             tag = ti["tag"]
             pre_col = i in preamble_collided
             post_col = i in postamble_collided
-            collided = pre_col or post_col
+            pre_cross_col = i in preamble_cross_collided
+            post_cross_col = i in postamble_cross_collided
+            collided = pre_col or post_col or pre_cross_col or post_cross_col
 
             if collided:
                 detail_parts = []
                 if pre_col:
-                    detail_parts.append("preamble_cross_collision" if i in preamble_cross_collided else "preamble_collision")
+                    detail_parts.append("preamble_collision")
+                if pre_cross_col:
+                    detail_parts.append("preamble_cross_collision")
+                if post_cross_col:
+                    detail_parts.append("postamble_cross_collision")
                 if post_col:
-                    detail_parts.append("postamble_cross_collision" if i in postamble_cross_collided else "postamble_collision")
+                    detail_parts.append("postamble_collision")
+                
                 self.logger.log(ti["postamble"][1], self.round_num, "transmission", "collision",
                                 tag.uid_hex, ",".join(detail_parts), "collision")
                 stats["collisions"] += 1

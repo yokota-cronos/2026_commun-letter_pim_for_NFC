@@ -24,7 +24,7 @@ class PimTag:
         self.rng = rng
 
         self.uid = rng.integers(2**self.id_bits)
-        self.data = rng.integers(2**self.data_bits)
+        self.data = rng.integers(1, 256)
         self.backoff = rng.integers(self.backoff_max)
 
     @property
