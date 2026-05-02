@@ -24,7 +24,13 @@ class PimTag:
         self.rng = rng
 
         self.uid = rng.integers(2**self.id_bits)
+
+        # データ値はint型で1-255の範囲で正規分布させる
+        # self.data = rng.normal(loc=128, scale=30)
+        
+        # データ値を1-255の範囲に一様分布
         self.data = rng.integers(1, 256)
+        
         self.backoff = rng.integers(self.backoff_max)
 
     @property
