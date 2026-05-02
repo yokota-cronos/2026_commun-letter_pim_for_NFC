@@ -46,7 +46,7 @@ Copy `config_template.yaml` to `config.yaml` and modify parameters for each prot
 ### Common Parameters
 
 | Parameter | Description |
-|--|--|--|
+|--|--|
 | `datarate` | Data rate [Hz] |
 | `nodes` | List of nodes to simulate |
 | `data_bits` | Number of data bits |
@@ -56,7 +56,7 @@ Copy `config_template.yaml` to `config.yaml` and modify parameters for each prot
 ### Slotted ALOHA Specific
 
 | Parameter | Description |
-|--|--|--|
+|--|--|
 | `num_slots` | Number of inventory slots |
 | `eof_bits` | EOF signal length [bits] |
 | `reader_cmd_bytes` | Reader command length [bytes] |
@@ -65,7 +65,7 @@ Copy `config_template.yaml` to `config.yaml` and modify parameters for each prot
 ### PIM-Specific
 
 | Parameter | Description |
-|--|--|--|
+|--|--|
 | `backoff_max` | Maximum random backoff [TU] |
 | `delimiter_bits` | Delimiter length [bit] |
 | `data_tu_mult` | Multiple of TU for data waiting time |
