@@ -113,3 +113,9 @@ A `logs/<protocol>_<YYYYMMDD_HHMMSS>/` directory is generated for each execution
 
 **PIM:**
 `start_signal`, `tx_preamble`, `tx_postamble`, `rx_success`, `collision`
+
+## License
+
+This software is released under the BSD 3-clause license. See ``LICENSE.txt``.
+
+Copyright (c) 2026, Satoshi IDO, Shigemi ISHIDA, and Ryo TAKAHASHI
