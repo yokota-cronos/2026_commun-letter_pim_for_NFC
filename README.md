@@ -1,35 +1,36 @@
-# NFC MAC Protocol Simulator
+# NFC Packet Interval Modulation (PIM) Simulator
 
-NFC環境における複数タグの通信をシミュレーションし、衝突率やスループットの評価に必要なログを出力するツール。2種類のMACプロトコル（Slotted ALOHA / PIM）を比較できる。
+A tool that simulates communication between multiple tags in an NFC environment and outputs logs necessary for evaluating collision rates and throughput. It allows for the comparison of two types of MAC protocols (Slotted ALOHA / PIM).
 
-## ディレクトリ構成
+## Directory Structure
 
 ```
 src/
-├── common/                  # 共通モジュール
-│   ├── simulator.py         # シミュレーター本体（時間管理・ラウンド実行）
-│   ├── channel.py           # 通信チャネル（パケット管理・衝突検出）
-│   └── logger.py            # イベントログ出力（TSV形式）
-├── slotted_aloha/           # Slotted ALOHAプロトコル
-│   ├── config_template.yaml # 設定ファイルのテンプレート
-│   ├── reader.py            # リーダー（インベントリ・データ収集）
-│   ├── tag.py               # タグ（マスク判定・スロット選択）
-│   └── run.py               # 実行エントリポイント
-└── pim/                     # PIM (Packet Interval Modulation) プロトコル
-    ├── config_template.yaml # 設定ファイルのテンプレート
-    ├── reader.py            # リーダー（衝突検出・データ復号）
-    ├── tag.py               # タグ（バックオフ・プリ/ポストアンブル生成）
-    └── run.py               # 実行エントリポイント
+├── common/                  # Common modules
+│   ├── simulator.py         # Simulator Core (Time Management, Round Execution)
+│   ├── channel.py           # Communication Channel (Packet Management, Collision Detection)
+│   └── logger.py            # Event Log Output (TSV Format)
+├── slotted_aloha/           # Slotted ALOHA Protocol
+│   ├── config_template.yaml # Configuration File Template
+│   ├── reader.py            # Reader (Inventory, Data Collection)
+│   ├── tag.py               # Tag (Mask Determination, Slot Selection)
+│   └── run.py               # Execution Entry Point
+└── pim/                     # Packet Interval Modulation (PIM) Protocol
+    ├── config_template.yaml # Configuration File Template
+    ├── reader.py            # Reader (Collision Detection & Data Decryption)
+    ├── tag.py               # Tag (Backoff & Pre/Post-Amble Generation)
+    └── run.py               # Execution Entry Point
 ```
 
-## 必要環境
+## Requirements
 
 - Python 3.9+
 - PyYAML
 - NumPy
 
-## 実行方法
+## How to Run
 
+Prepare for `config.yaml` as described below and execute simulation as:
 ```bash
 # Slotted ALOHA
 python -m src.slotted_aloha.run
@@ -38,74 +39,74 @@ python -m src.slotted_aloha.run
 python -m src.pim.run
 ```
 
-## 設定パラメータ
+## Configuration Parameters
 
-各プロトコルの `config_template.yaml` をコピーした `config.yaml` で設定する。
+Copy `config_template.yaml` to `config.yaml` and modify parameters for each protocol.
 
-### 共通パラメータ
+### Common Parameters
 
-| パラメータ | 説明 | デフォルト |
+| Parameter | Description |
 |--|--|--|
-| `datarate` | データレート [Hz] | 424000 |
-| `nodes` | シミュレーション対象のノード数リスト | [5, 10] |
-| `data_bits` | データビット数 | 8 |
-| `id_bits` | タグID長 [bit] | 8 |
-| `num_rounds` | ラウンド数 | 100 |
+| `datarate` | Data rate [Hz] |
+| `nodes` | List of nodes to simulate |
+| `data_bits` | Number of data bits |
+| `id_bits` | Tag ID length [bits] |
+| `num_rounds` | Number of rounds |
 
-### Slotted ALOHA固有
+### Slotted ALOHA Specific
 
-| パラメータ | 説明 | デフォルト |
+| Parameter | Description |
 |--|--|--|
-| `num_slots` | インベントリスロット数 | 16 |
-| `eof_bits` | EOF信号長 [bit] | 8 |
-| `reader_cmd_bytes` | リーダーコマンド長 [byte] | 13 |
-| `tag_overhead_bytes` | タグ応答オーバーヘッド [byte] | 3 |
+| `num_slots` | Number of inventory slots |
+| `eof_bits` | EOF signal length [bits] |
+| `reader_cmd_bytes` | Reader command length [bytes] |
+| `tag_overhead_bytes` | Tag response overhead [bytes] |
 
-### PIM固有
+### PIM-Specific
 
-| パラメータ | 説明 | デフォルト |
+| Parameter | Description |
 |--|--|--|
-| `backoff_max` | ランダムバックオフ最大値 [TU] | 4096 |
-| `delimiter_bits` | デリミタ長 [bit] | 8 |
-| `data_tu_mult` | データ待機単位時間のTU倍数 | 1 |
+| `backoff_max` | Maximum random backoff [TU] |
+| `delimiter_bits` | Delimiter length [bit] |
+| `data_tu_mult` | Multiple of TU for data waiting time |
 
-## プロトコル概要
+## Protocol Overview
 
-### Slotted ALOHA (NFC Type V準拠)
+### Slotted ALOHA (NFC Type V Compliant)
 
-1. **インベントリフェーズ**: リーダーがインベントリコマンド（マスク長・マスク値・スロット数=16を指定）を送信。タグはUIDの下位ビットがマスクに一致すれば、マスク直上4ビットで決まるスロットで応答する。衝突発生時はマスク長を4bit拡張して再帰的に解決する。
-2. **データ収集フェーズ**: 認識済みタグに対してアドレス指定でデータ要求を順次送信。
+1. **Inventory Phase**: The reader transmits an inventory command (specifying mask length, mask value, and number of slots = 16). Tags respond in the slot determined by the 4 bits immediately above the mask if the lower bits of their UID match the mask. In the event of a collision, the mask length is extended by 4 bits to resolve the conflict recursively.
+2. **Data Collection Phase**: The reader sequentially sends data requests to recognized tags using address specification.
 
 ### PIM (Packet Interval Modulation)
 
-1. リーダーが開始信号を送信。
-2. 各タグはランダムバックオフ後にプリアンブル（デリミタ+ID）を送信。
-3. 送信データ値に比例した時間だけ待機し、ポストアンブル（デリミタ+ID）を送信。
-4. プリアンブルとポストアンブルの間隔がデータを表現する。
+1. The reader transmits a start signal.
+2. Each tag transmits a preamble (delimiter + ID) after a random backoff.
+3. Wait for a duration proportional to the data value, then transmit a post-amble (delimiter + ID).
+4. The interval between the pre-amble and post-amble represents the data.
 
-## ログ出力
+## Log Output
 
-実行ごとに `logs/<protocol>_<YYYYMMDD_HHMMSS>/` ディレクトリが生成される。
+A `logs/<protocol>_<YYYYMMDD_HHMMSS>/` directory is generated for each execution.
 
-| ファイル | 内容 |
+| File | Content |
 |--|--|
-| `events.tsv` | 全イベントログ（TSV形式） |
-| `config.yaml` | 実行時設定のコピー |
-| `summary.txt` | ノード数ごとの衝突数・成功数の集計 |
+| `events.tsv` | Complete event log (TSV format) |
+| `config.yaml` | Copy of runtime configuration |
+| `summary.txt` | Summary of collisions and successes by number of nodes |
 
-### events.tsv のカラム
+### Columns in events.tsv
 
-| カラム | 説明 |
+| Column | Description |
 |--|--|
-| `time_tu` | イベント発生時刻 [TU] |
-| `round` | ラウンド番号 |
-| `phase` | フェーズ（`inventory` / `data_collection` / `transmission`） |
-| `event` | イベント種別 |
-| `tag_id` | 対象タグのUID（16進数） |
-| `detail` | 詳細情報 |
-| `result` | 結果（`success` / `collision` / `empty` / `-`） |
+| `time_tu` | Event occurrence time [TU] |
+| `round` | Round number |
+| `phase` | Phase (`inventory` / `data_collection` / `transmission`) |
+| `event` | Event type |
+| `tag_id` | Target tag UID (hexadecimal) |
+| `detail` | Detailed information |
+| `result` | Result (`success` / `collision` / `empty` / `-`) |
 
-### 主なイベント種別
+### Major Event Types
 
 **Slotted ALOHA:**
 `inventory_cmd`, `tag_response`, `collision`, `slot_empty`, `eof`, `unresolvable`, `data_request`, `data_response`
