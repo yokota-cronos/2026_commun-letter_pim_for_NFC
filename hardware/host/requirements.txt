@@ -1,0 +1,6 @@
+# PIM host の依存（uv を使わない場合: pip install -r host/requirements.txt）
+numpy
+matplotlib          # demo/plot 用（波形・パケット図 PNG）。pim.py の復号自体は numpy のみ。
+# --- AD タグ駆動（pc/mcu/tag モード）には Digilent WaveForms ランタイムが別途必要 ---
+#   https://digilent.com/reference/software/waveforms/waveforms-3/start
+#   dwf ライブラリは host/dwf_ad.py が ctypes で実行時ロードする（pydwf 不要）。

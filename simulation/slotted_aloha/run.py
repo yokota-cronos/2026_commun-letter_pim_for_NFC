@@ -3,9 +3,9 @@ import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
-from src.common.simulator import Simulator, load_config
-from src.slotted_aloha.reader import SlottedAlohaReader
-from src.slotted_aloha.tag import SlottedAlohaTag
+from simulation.common.simulator import Simulator, load_config
+from simulation.slotted_aloha.reader import SlottedAlohaReader
+from simulation.slotted_aloha.tag import SlottedAlohaTag
 
 
 def reader_factory(config, channel, logger, round_num):

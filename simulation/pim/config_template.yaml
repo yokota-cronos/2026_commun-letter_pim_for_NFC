@@ -1,0 +1,19 @@
+datarate: 211875        # Data rate [Hz] (= 13.56 MHz / 64; 1 bit = 2 TU because the hardware uses Manchester coding)
+tu: 2.359882005899705e-06  # Time unit [s] (= 32 / 13.56 MHz = 1/423.75 kHz; same TU as hardware/host/pim.py)
+max_tags: 100            # Total number of tags generated
+nodes: [5, 10]          # List of numbers of tags randomly selected from the generated tags
+data_bits: 8            # Number of data bits
+id_bits: 8              # ID length [bit]
+backoff_max: [1024, 2048]      # Maximum random backoff [TU] (2^14 = 16384 is the optimum in the paper and the hardware default)
+                        # A list (e.g. [4096, 8192, 16384]) writes each value to logs/pim_<time>/backoff_<value>/
+delimiter_bits: 8       # Delimiter length [bit] (not used when preamble_tu/postamble_tu are given)
+preamble_tu: 21         # Preamble length [TU] (hardware: SOF 4 + gap 1 + ID 16). If removed, computed from delimiter + ID
+postamble_tu: 25        # Postamble length [TU] (hardware: SOF 8 + gap 1 + ID 16). If removed, computed from delimiter + ID
+data_tu_mult: 1         # Multiple of TU for the data waiting time (redundancy). A list (e.g. [1, 2, 3]) sweeps it
+data_dist: uniform      # Distribution of data values: uniform (1-255) / gauss (N(data_mean, data_std) rounded to 1-255)
+                        # A list (e.g. [uniform, gauss]) sweeps it. Output goes to logs/pim_<time>/<dist>_mult<n>/ etc.
+data_mean: 128          # Mean for data_dist: gauss
+data_std: 30            # Standard deviation for data_dist: gauss
+num_rounds: 10000         # Number of rounds
+random_seed: 42         # Random seed (use the same value as --seed on the hardware)
+reseed_per_nodes: true  # Restart from the seed for each N (each round draws the same values as the hardware). false/omitted: previous behavior
