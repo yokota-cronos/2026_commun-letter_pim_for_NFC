@@ -17,3 +17,7 @@ config.yaml
 logs/
 img/
 tsv/
+
+# hardware
+hardware/firmware/build/
+hardware/log/

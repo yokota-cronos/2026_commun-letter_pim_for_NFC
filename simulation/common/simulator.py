@@ -1,3 +1,4 @@
+from __future__ import annotations
 from numpy.random import default_rng
 import yaml
 
@@ -31,7 +32,8 @@ def bits_to_tu(bits: float, datarate: float, tu: float) -> float:
 
 class Simulator:
     def __init__(self, protocol: str, config: dict, config_path: str,
-                 reader_factory, tag_factory, log_base_dir: str = "logs"):
+                 reader_factory, tag_factory, log_base_dir: str = "logs",
+                 log_dir: str | None = None):
         """
         シミュレーターの初期化
         
@@ -44,13 +46,18 @@ class Simulator:
             reader_factory: リーダーインスタンスを生成するファクトリ関数
             tag_factory: タグインスタンスを生成するファクトリ関数
             log_base_dir: ログ出力先ディレクトリのベースパス（デフォルト: "logs"）
+            log_dir: 出力先を直接指定する場合（パラメータ掃引のサブディレクトリ）。
+              このとき config.yaml は config_path のコピーではなく、渡された config を書き出す
         """
         self.protocol = protocol
         self.config = config
         self.config_path = config_path
         self.channel = Channel()
-        self.logger = EventLogger(protocol, log_base_dir)
-        self.logger.copy_config(config_path)
+        self.logger = EventLogger(protocol, log_base_dir, log_dir)
+        if log_dir is None:
+            self.logger.copy_config(config_path)
+        else:
+            self.logger.write_config(config)
         self.reader_factory = reader_factory
         self.tag_factory = tag_factory
         self.max_tags = config["max_tags"]
@@ -95,6 +102,12 @@ class Simulator:
         """
         if num_nodes > self.max_tags:
             raise ValueError(f"nodes ({num_nodes}) must be <= max_tags ({self.max_tags})")
+
+        # reseed_per_nodes: true なら N ごとに seed から乱数を作り直す。N=4 の結果が
+        # nodes リストの並びに依らず決まり、実機（host/pim_multitag.py の SimTagRng）と
+        # ラウンド単位で同じ抽選になる。未指定なら従来どおり N をまたいで系列が続く。
+        if self.config.get("reseed_per_nodes", False):
+            self.rng = default_rng(self.config["random_seed"])
 
         total_collisions = 0
         total_successes = 0

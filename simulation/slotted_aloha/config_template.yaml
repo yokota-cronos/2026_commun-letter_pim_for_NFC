@@ -1,0 +1,12 @@
+datarate: 26480        # Data rate [Hz] (NFC-V default: 13.56 MHz / 512 ≈ 26.48 kHz)
+tu: 0.3776435045e-04     # Time unit [s] (default: 1/datarate)
+max_tags: 100            # Total number of tags generated
+nodes: [5, 10]          # List of numbers of tags randomly selected from the generated tags
+data_bits: 8            # Number of data bits
+id_bits: 8              # ID length [bit]
+num_slots: 16           # Number of slots
+num_rounds: 100         # Number of rounds
+eof_bits: 8             # EOF length [bit]
+reader_cmd_bytes: 13    # Reader command length [byte]
+tag_overhead_bytes: 3   # Tag response overhead [byte] (flags + CRC)
+random_seed: 42         # Random seed

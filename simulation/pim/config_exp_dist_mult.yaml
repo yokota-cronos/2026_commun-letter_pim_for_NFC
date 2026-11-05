@@ -1,0 +1,20 @@
+# Experiment C (data distribution × redundancy): uniform/gauss × mult 1/2/3, 5 tags, 1e6 packets
+#   python -m simulation.pim.run simulation/pim/config_exp_dist_mult.yaml
+
+datarate: 211875        # Data rate [Hz] (= 13.56 MHz / 64; 1 bit = 2 TU because the hardware uses Manchester coding)
+tu: 2.359882005899705e-06  # Time unit [s] (= 32 / 13.56 MHz = 1/423.75 kHz; same TU as hardware/host/pim.py)
+max_tags: 100            # Total number of tags generated
+nodes: [5]               # 5 tags, same as the hardware
+data_bits: 8            # Number of data bits
+id_bits: 8              # ID length [bit]
+backoff_max: 16384      # 2^14, same as the hardware
+delimiter_bits: 8       # Delimiter length [bit] (not used when preamble_tu/postamble_tu are given)
+preamble_tu: 21         # Preamble length [TU] (hardware: SOF 4 + gap 1 + ID 16). If removed, computed from delimiter + ID
+postamble_tu: 25        # Postamble length [TU] (hardware: SOF 8 + gap 1 + ID 16). If removed, computed from delimiter + ID
+data_tu_mult: [1, 2, 3]  # Sweep the redundancy
+data_dist: [uniform, gauss]  # Sweep the distribution → logs/pim_<time>/<dist>_mult<n>/
+data_mean: 128          # Mean for data_dist: gauss
+data_std: 30            # Standard deviation for data_dist: gauss
+num_rounds: 200000     # 5 tags × 2e5 = 1e6 packets
+random_seed: 42         # Random seed (use the same value as --seed on the hardware)
+reseed_per_nodes: true  # Restart from the seed for each N (each round draws the same values as the hardware). false/omitted: previous behavior
